@@ -1,0 +1,83 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"/>
+	<title>Test</title>
+	<script src="//g.alicdn.com/??kissy/k/1.4.4/seed-min.js,mui/seed/1.4.5/seed.js,mui/seed-g/1.0.89/seed.js"></script>
+	<script src="//g.alicdn.com/tm/sample/1.0.0/global.js"></script>
+</head>
+
+<body>
+<articleList></articleList>
+<input id="J_val" value="123">
+<div id="J_Page"></div>
+<button id="J_btn">刷新</button>
+
+<script>
+	KISSY.use("sample/mods/mvm, sample/mods/sample/indexTpl, io, mui/pagination, dom, event", function(S, MVM, IndexTpl, IO, Pagination, DOM, Event){
+
+		var articleList = MVM.create({
+			container : "articleList",
+			//template目前是juicer的模板对象，暂时不支持字符串形式的模板
+			template : IndexTpl,
+			//是否异步请求的形式
+			async : true,
+			//可以在触发数据变化之前，对数据进行一些特殊处理
+			before : function(json){
+				json.model.list.forEach(function(item){
+					item.title2 = "before insert...";
+				});
+				return json;
+			},
+			data : {
+				apiUrl : "sample/ajax.do?page=1",
+				//params : {} 直接传递一个对象也是可以的哦
+				//传递一个函数过来，返回一个对象也是可以的哦
+				params : function(){ 
+					return { keyword : DOM.val("#J_val") }; 
+				}
+			},
+
+			/* 如下是“事件”类型的API接口 */
+
+			//组件创建的时候，设置一些属性值
+			didCreated : function(){
+				this.setProps("initPager", false);
+			},
+			beforeChange : function(oldData){
+				console.log("before change...");
+			},
+			afterChange : function(newData){
+				var me = this;
+
+				var isInitPager = me.props.initPager;
+				if(!isInitPager){
+					// 初始化
+					var pagination = new Pagination({
+						container: '#J_Page',
+						totalPage: newData.model.totalPage
+					});
+
+					// 监听页码变化
+					pagination.on('afterPageChange', function(e){
+						me.setData("apiUrl", "sample/ajax.do?page=" + e.idx);
+					});
+
+					me.setProps("initPager", true);
+				}
+			}
+		});
+
+		Event.on("#J_btn", "click", function(e){
+			//翻页的逻辑需要重新渲染
+			articleList.setProps("initPager", false);
+			articleList.setData("apiUrl", "sample/ajax.do?t=" + (+new Date()));
+		});
+
+	});
+
+</script>
+</body>
+</html>
